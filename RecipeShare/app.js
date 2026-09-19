@@ -2,983 +2,551 @@ const supabaseUrl = "https://ssudtbgcmsvdykpsssmm.supabase.co";
 const supabaseKey = "sb_publishable_DNtIhkKaqtT_mSvSUYZvNw_92enOKm8";
 
 const { createClient } = supabase;
-const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+const client = createClient(supabaseUrl, supabaseKey);
+
+console.log(client);
 
 
-// ===============================
-// GET USER
-// ===============================
+document.addEventListener("DOMContentLoaded", async () => {
 
-async function getUser() {
-
-    const result = await supabaseClient.auth.getUser();
-
-    return result.data.user;
-}
+    console.log("App started");
 
 
-// ===============================
-// CHECK USER LOGIN
-// ===============================
+    const loginBtn = document.querySelector("#loginBtn");
+    const signupBtn = document.querySelector("#signupBtn");
+    const logoutBtn = document.querySelector("#logoutBtn");
+    const protectedLinks = document.querySelectorAll(".protected-link");
 
-async function checkUser() {
 
-    const user = await getUser();
+    const {
+        data: { user }
+    } = await client.auth.getUser();
 
-    if (!user) {
 
-        window.location.href = "login.html";
+    console.log("Current User:", user);
 
-        return null;
+
+    if (user) {
+
+        if (loginBtn) {
+            loginBtn.classList.add("d-none");
+        }
+
+        if (signupBtn) {
+            signupBtn.classList.add("d-none");
+        }
+
+        if (logoutBtn) {
+            logoutBtn.classList.remove("d-none");
+        }
+
     }
+    else {
 
-    return user;
-}
+        if (loginBtn) {
+            loginBtn.classList.remove("d-none");
+        }
 
+        if (signupBtn) {
+            signupBtn.classList.remove("d-none");
+        }
 
-// ===============================
-// SHOW MESSAGE
-// ===============================
+        if (logoutBtn) {
+            logoutBtn.classList.add("d-none");
+        }
 
-function showMessage(message, type) {
-
-    const box = document.createElement("div");
-
-    box.className =
-        "alert alert-" + type +
-        " position-fixed top-0 end-0 m-3 shadow";
-
-    box.style.zIndex = "2000";
-
-    box.innerText = message;
-
-    document.body.appendChild(box);
-
-
-    setTimeout(function () {
-
-        box.remove();
-
-    }, 3500);
-}
-
-
-// ===============================
-// ESCAPE TEXT
-// ===============================
-
-function esc(text) {
-
-    if (!text) {
-
-        return "";
-    }
-
-    return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-
-// ===============================
-// RECIPE CARD
-// ===============================
-
-function recipeCard(recipe, owner) {
-
-    let image = "";
-
-
-    if (recipe.image_url) {
-
-        image =
-            '<img src="' +
-            esc(recipe.image_url) +
-            '" class="recipe-img" alt="' +
-            esc(recipe.title) +
-            '">';
-
-    } else {
-
-        image =
-            '<div class="recipe-placeholder">' +
-            '<i class="bi bi-egg-fried"></i>' +
-            '</div>';
     }
 
 
-    let buttons = "";
 
+    if (logoutBtn) {
 
-    if (owner) {
+        logoutBtn.addEventListener("click", async () => {
 
-        buttons =
+            try {
 
-            '<div class="d-flex gap-2 mt-3">' +
+                const { error } = await client.auth.signOut();
 
-            '<a href="edit-recipe.html?id=' +
-            encodeURIComponent(recipe.id) +
-            '" class="btn btn-warning flex-fill">' +
+                if (error) {
 
-            '<i class="bi bi-pencil me-1"></i>' +
-            'Edit' +
+                    console.log(error.message);
 
-            '</a>' +
+                    alert(error.message);
 
-            '<button class="btn btn-outline-danger delete-btn" ' +
-            'data-id="' + recipe.id + '">' +
+                    return;
 
-            '<i class="bi bi-trash me-1"></i>' +
-            'Delete' +
+                }
 
-            '</button>' +
+                window.location.href = "index.html";
 
-            '</div>';
+            }
+
+            catch (error) {
+
+                console.log(error);
+
+                alert(error.message);
+
+            }
+
+        });
+
     }
 
 
-    return (
-
-        '<div class="col-md-6 col-lg-4">' +
-
-        '<article class="recipe-card">' +
-
-        image +
-
-        '<div class="recipe-body">' +
-
-        '<div class="d-flex justify-content-between gap-2 mb-2">' +
-
-        '<span class="category-pill">' +
-
-        esc(recipe.category || "Recipe") +
-
-        '</span>' +
+    const signupForm = document.querySelector("#signupForm");
 
 
-        (recipe.cooking_time
+    if (signupForm) {
 
-            ? '<small class="text-muted">' +
-              '<i class="bi bi-clock me-1"></i>' +
-              esc(recipe.cooking_time) +
-              '</small>'
+        signupForm.addEventListener("submit", async (event) => {
 
-            : "") +
+            try {
 
-        '</div>' +
+                event.preventDefault();
 
-
-        '<h5 class="fw-bold mb-2">' +
-
-        esc(recipe.title) +
-
-        '</h5>' +
+                console.log("Signup started");
 
 
-        '<p class="text-muted small mb-0">' +
+                const username =
+                    document.querySelector("#username");
 
-        esc(
-            recipe.description ||
-            "A delicious recipe shared by the community."
-        ) +
+                const email =
+                    document.querySelector("#email");
 
-        '</p>' +
-
-
-        '<a href="recipe-details.html?id=' +
-        encodeURIComponent(recipe.id) +
-        '" class="btn btn-soft w-100 mt-3">' +
-
-        'View Recipe' +
-
-        '</a>' +
+                const password =
+                    document.querySelector("#password");
 
 
-        buttons +
+                if (username.value.trim() === "") {
 
-        '</div>' +
+                    alert("Please enter username");
 
-        '</article>' +
+                    return;
 
-        '</div>'
-    );
-}
+                }
 
 
-// ===============================
-// GET USERNAME
-// ===============================
+                if (email.value.trim() === "") {
 
-async function getUsername(user) {
+                    alert("Please enter email");
 
-    const result = await supabaseClient
-        .from("users")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
+                    return;
+
+                }
 
 
-    if (result.data) {
+                if (password.value.trim() === "") {
 
-        return result.data.username;
+                    alert("Please enter password");
+
+                    return;
+
+                }
+
+
+                const { data, error: signupError } =
+                    await client.auth.signUp({
+
+                        email: email.value,
+
+                        password: password.value
+
+                    });
+
+
+                console.log("Signup Data:", data);
+
+                console.log("Signup Error:", signupError);
+
+
+                if (signupError) {
+
+                    console.log(signupError.message);
+
+                    alert(signupError.message);
+
+                    return;
+
+                }
+
+
+                const id = data.user?.id;
+
+
+                console.log("User ID:", id);
+
+
+                if (!id) {
+
+                    alert("User ID not found");
+
+                    return;
+
+                }
+
+
+                const { error: databaseError } =
+                    await client
+                        .from("Users")
+                        .insert({
+
+                            id: id,
+
+                            username: username.value
+
+                        });
+
+
+                console.log(
+                    "Database Error:",
+                    databaseError
+                );
+
+
+                if (databaseError) {
+
+                    console.log(
+                        databaseError.message
+                    );
+
+                    alert(databaseError.message);
+
+                    return;
+
+                }
+
+
+                alert("Account created successfully!");
+
+
+
+                
+
+window.location.href = "dashboard.html";
+            }
+
+            catch (error) {
+
+                console.log(error);
+
+                alert(error.message);
+
+            }
+
+        });
+
     }
 
 
-    if (user.email) {
+    const loginForm = document.querySelector("#loginForm");
 
-        return user.email.split("@")[0];
+
+    if (loginForm) {
+
+        loginForm.addEventListener("submit", async (event) => {
+
+            try {
+
+                event.preventDefault();
+
+                console.log("Login started");
+
+
+                const email =
+                    document.querySelector("#email");
+
+                const password =
+                    document.querySelector("#password");
+
+
+                if (email.value.trim() === "") {
+
+                    alert("Please enter email");
+
+                    return;
+
+                }
+
+
+                if (password.value.trim() === "") {
+
+                    alert("Please enter password");
+
+                    return;
+
+                }
+
+
+                const { data, error } =
+                    await client.auth.signInWithPassword({
+
+                        email: email.value,
+
+                        password: password.value
+
+                    });
+
+
+                console.log("Login Data:", data);
+
+                console.log("Login Error:", error);
+
+
+                if (error) {
+
+                    alert(error.message);
+
+                    return;
+
+                }
+
+
+                alert("Login successful!");
+
+
+                window.location.href = "dashboard.html";
+
+            }
+
+            catch (error) {
+
+                console.log(error);
+
+                alert(error.message);
+
+            }
+
+        });
+
     }
 
 
-    return "Chef";
-}
 
 
-// ===============================
-// GET MY RECIPES
-// ===============================
-
-async function getMyRecipes() {
-
-    const user = await checkUser();
-
-    if (!user) {
-
-        return [];
-    }
+    const myRecipesContainer =
+        document.querySelector("#myRecipesContainer");
 
 
-    const result = await supabaseClient
-        .from("recipes")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", {
-            ascending: false
+    if (myRecipesContainer) {
+
+        console.log("My Recipes page");
+
+
+        if (!user) {
+
+            window.location.href = "login.html";
+
+            return;
+
+        }
+
+
+        const { data: recipes, error } =
+            await client
+                .from("recipes")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("created_at", {
+                    ascending: false
+                });
+
+
+        console.log("My Recipes:", recipes);
+
+        console.log("My Recipes Error:", error);
+
+
+        if (error) {
+
+            myRecipesContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        ${error.message}
+                    </div>
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        if (!recipes || recipes.length === 0) {
+
+            myRecipesContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <h4>No recipes found</h4>
+                        <p class="text-muted">
+                            You have not created any recipes yet.
+                        </p>
+                        <a href="create-recipe.html"
+                           class="btn btn-primary">
+                            Create Recipe
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        myRecipesContainer.innerHTML = "";
+
+
+        recipes.forEach((recipe) => {
+
+            myRecipesContainer.innerHTML += `
+
+                <div class="col-md-6 col-lg-4">
+
+                    <div class="card h-100 shadow-sm">
+
+                        ${
+                            recipe.image_url
+                            ?
+                            `
+                            <img
+                                src="${recipe.image_url}"
+                                class="card-img-top"
+                                style="height:220px; object-fit:cover;"
+                            >
+                            `
+                            :
+                            ""
+                        }
+
+                        <div class="card-body">
+
+                            <span class="badge bg-primary mb-2">
+                                ${recipe.category || "Recipe"}
+                            </span>
+
+                            <h5 class="card-title">
+                                ${recipe.title}
+                            </h5>
+
+                            <p class="card-text text-muted">
+                                ${
+                                    recipe.description
+                                    || "No description available."
+                                }
+                            </p>
+
+                            <div class="d-flex gap-2">
+
+                                <a
+                                    href="recipe-details.html?id=${recipe.id}"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    View
+                                </a>
+
+                                <a
+                                    href="edit-recipe.html?id=${recipe.id}"
+                                    class="btn btn-outline-primary btn-sm"
+                                >
+                                    Edit
+                                </a>
+
+                                <button
+                                    class="btn btn-outline-danger btn-sm delete-recipe"
+                                    data-id="${recipe.id}"
+                                >
+                                    Delete
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            `;
+
         });
 
 
-    if (result.error) {
-
-        showMessage(
-            result.error.message,
-            "danger"
-        );
-
-        return [];
-    }
+        const deleteButtons =
+            document.querySelectorAll(".delete-recipe");
 
 
-    return result.data || [];
-}
+        deleteButtons.forEach((button) => {
+
+            button.addEventListener("click", async () => {
+
+                const recipeId =
+                    button.getAttribute("data-id");
 
 
-// ===============================
-// DELETE RECIPE
-// ===============================
-
-async function deleteRecipe(id) {
-
-    const user = await checkUser();
-
-    if (!user) {
-
-        return;
-    }
+                const confirmDelete =
+                    confirm(
+                        "Are you sure you want to delete this recipe?"
+                    );
 
 
-    const answer = confirm(
-        "Are you sure you want to delete this recipe?"
-    );
+                if (!confirmDelete) {
+                    return;
+                }
 
 
-    if (!answer) {
-
-        return;
-    }
-
-
-    const result = await supabaseClient
-        .from("recipes")
-        .delete()
-        .eq("id", id)
-        .eq("user_id", user.id);
+                const { error } =
+                    await client
+                        .from("recipes")
+                        .delete()
+                        .eq("id", recipeId)
+                        .eq("user_id", user.id);
 
 
-    if (result.error) {
-
-        showMessage(
-            result.error.message,
-            "danger"
-        );
-
-        return;
-    }
-
-
-    showMessage(
-        "Recipe deleted successfully.",
-        "success"
-    );
-
-
-    setTimeout(function () {
-
-        location.reload();
-
-    }, 500);
-}
-
-
-// ===============================
-// PAGE LOAD
-// ===============================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    async function () {
-
-
-        // =========================
-        // PASSWORD SHOW / HIDE
-        // =========================
-
-        const passwordButtons =
-            document.querySelectorAll(".pw-toggle");
-
-
-        passwordButtons.forEach(
-            function (button) {
-
-                button.addEventListener(
-                    "click",
-                    function () {
-
-                        const input =
-                            button.parentElement
-                            .querySelector("input");
-
-
-                        const icon =
-                            button.querySelector("i");
-
-
-                        if (input.type === "password") {
-
-                            input.type = "text";
-
-                            if (icon) {
-
-                                icon.className =
-                                    "bi bi-eye-slash";
-                            }
-
-                        } else {
-
-                            input.type = "password";
-
-                            if (icon) {
-
-                                icon.className =
-                                    "bi bi-eye";
-                            }
-                        }
-
-                    }
+                console.log(
+                    "Delete Error:",
+                    error
                 );
 
-            }
-        );
+
+                if (error) {
+
+                    alert(error.message);
+
+                    return;
+
+                }
 
 
-        // =========================
-        // CURRENT USER
-        // =========================
-
-        const user = await getUser();
+                alert("Recipe deleted successfully!");
 
 
-        // =========================
-        // LOGOUT
-        // =========================
-
-        const logoutButton =
-            document.getElementById("logoutBtn");
-
-
-        const loginButton =
-            document.getElementById("loginBtn");
-
-
-        const signupButton =
-            document.getElementById("signupBtn");
-
-
-        if (logoutButton) {
-
-            if (user) {
-
-                logoutButton.classList.remove("d-none");
-
-            } else {
-
-                logoutButton.classList.add("d-none");
-            }
-
-
-            logoutButton.onclick =
-                async function () {
-
-                    await supabaseClient.auth.signOut();
-
-                    window.location.href =
-                        "login.html";
-                };
-        }
-
-
-        if (user) {
-
-            if (loginButton) {
-
-                loginButton.classList.add("d-none");
-            }
-
-
-            if (signupButton) {
-
-                signupButton.classList.add("d-none");
-            }
-
-        } else {
-
-            const links =
-                document.querySelectorAll(".protected-link");
-
-
-            links.forEach(function (link) {
-
-                link.href = "login.html";
+                location.reload();
 
             });
-        }
 
+        });
 
-        // =========================
-        // SIGNUP
-        // =========================
+    }
 
-        const signupForm =
-            document.getElementById("signupForm");
 
 
-        if (signupForm) {
 
-            signupForm.addEventListener(
-                "submit",
-                async function (e) {
+    const allRecipesContainer =
+        document.querySelector("#allRecipesContainer");
 
-                    e.preventDefault();
 
+    if (allRecipesContainer) {
 
-                    const username =
-                        document.getElementById("username")
-                        .value
-                        .trim();
+        console.log("All Recipes page");
 
 
-                    const email =
-                        document.getElementById("email")
-                        .value
-                        .trim();
+        let allRecipes = [];
 
 
-                    const password =
-                        document.getElementById("password")
-                        .value
-                        .trim();
-
-
-                    if (
-                        username === "" ||
-                        email === "" ||
-                        password === ""
-                    ) {
-
-                        showMessage(
-                            "Please fill all fields.",
-                            "warning"
-                        );
-
-                        return;
-                    }
-
-
-                    const result =
-                        await supabaseClient.auth.signUp({
-
-                            email: email,
-
-                            password: password
-
-                        });
-
-
-                    if (result.error) {
-
-                        showMessage(
-                            result.error.message,
-                            "danger"
-                        );
-
-                        return;
-                    }
-
-
-                    if (!result.data.user) {
-
-                        showMessage(
-                            "Signup failed.",
-                            "danger"
-                        );
-
-                        return;
-                    }
-
-
-                    const userData = {
-
-                        id: result.data.user.id,
-
-                        username: username
-                    };
-
-
-                    const userResult =
-                        await supabaseClient
-                        .from("users")
-                        .insert([userData]);
-
-
-                    if (userResult.error) {
-
-                        showMessage(
-                            "Account created, but username could not be saved.",
-                            "warning"
-                        );
-
-                        return;
-                    }
-
-
-                    showMessage(
-                        "Account created successfully!",
-                        "success"
-                    );
-
-
-                    setTimeout(function () {
-
-                        window.location.href =
-                            "dashboard.html";
-
-                    }, 700);
-
-                }
-            );
-        }
-
-
-        // =========================
-        // LOGIN
-        // =========================
-
-        const loginForm =
-            document.getElementById("loginForm");
-
-
-        if (loginForm) {
-
-            loginForm.addEventListener(
-                "submit",
-                async function (e) {
-
-                    e.preventDefault();
-
-
-                    const email =
-                        document.getElementById("email")
-                        .value
-                        .trim();
-
-
-                    const password =
-                        document.getElementById("password")
-                        .value
-                        .trim();
-
-
-                    if (
-                        email === "" ||
-                        password === ""
-                    ) {
-
-                        showMessage(
-                            "Please enter email and password.",
-                            "warning"
-                        );
-
-                        return;
-                    }
-
-
-                    const result =
-                        await supabaseClient.auth
-                        .signInWithPassword({
-
-                            email: email,
-
-                            password: password
-
-                        });
-
-
-                    if (result.error) {
-
-                        showMessage(
-                            result.error.message,
-                            "danger"
-                        );
-
-                        return;
-                    }
-
-
-                    window.location.href =
-                        "dashboard.html";
-
-                }
-            );
-        }
-
-
-        // =========================
-        // HOME PAGE
-        // =========================
-
-        const homeContainer =
-            document.getElementById(
-                "homeRecipesContainer"
-            );
-
-
-        if (homeContainer) {
-
-            const result =
-                await supabaseClient
-                .from("recipes")
-                .select("*")
-                .order("created_at", {
-                    ascending: false
-                })
-                .limit(6);
-
-
-            if (result.error) {
-
-                homeContainer.innerHTML = `
-
-                    <div class="col-12">
-
-                        <div class="panel empty-state">
-
-                            <i class="bi bi-exclamation-circle fs-1 text-danger"></i>
-
-                            <h5 class="fw-bold mt-3">
-                                Could not load recipes
-                            </h5>
-
-                            <p class="text-muted">
-                                ${esc(result.error.message)}
-                            </p>
-
-                        </div>
-
-                    </div>
-                `;
-
-            } else if (
-                !result.data ||
-                result.data.length === 0
-            ) {
-
-                homeContainer.innerHTML = `
-
-                    <div class="col-12">
-
-                        <div class="panel empty-state">
-
-                            <i class="bi bi-journal-plus fs-1 text-primary"></i>
-
-                            <h5 class="fw-bold mt-3">
-                                No recipes shared yet
-                            </h5>
-
-                            <p class="text-muted">
-                                Be the first person to share a recipe.
-                            </p>
-
-                            <a href="create-recipe.html"
-                               class="btn btn-primary">
-                               Share Recipe
-                            </a>
-
-                        </div>
-
-                    </div>
-                `;
-
-            } else {
-
-                homeContainer.innerHTML = "";
-
-
-                result.data.forEach(
-                    function (recipe) {
-
-                        homeContainer.innerHTML +=
-                            recipeCard(recipe, false);
-
-                    }
-                );
-            }
-        }
-
-
-        // =========================
-        // DASHBOARD
-        // =========================
-
-        const dashboardContainer =
-            document.getElementById(
-                "recipesContainer"
-            );
-
-
-        if (dashboardContainer) {
-
-            const dashboardUser =
-                await checkUser();
-
-
-            if (!dashboardUser) {
-
-                return;
-            }
-
-
-            const usernameElement =
-                document.getElementById(
-                    "username"
-                );
-
-
-            if (usernameElement) {
-
-                usernameElement.innerText =
-                    await getUsername(
-                        dashboardUser
-                    );
-            }
-
-
-            const recipes =
-                await getMyRecipes();
-
-
-            document.getElementById(
-                "totalRecipes"
-            ).innerText =
-                recipes.length;
-
-
-            document.getElementById(
-                "recentCount"
-            ).innerText =
-                Math.min(
-                    recipes.length,
-                    5
-                );
-
-
-            dashboardContainer.innerHTML = "";
-
-
-            if (recipes.length === 0) {
-
-                dashboardContainer.innerHTML = `
-
-                    <div class="col-12">
-
-                        <div class="panel empty-state">
-
-                            <i class="bi bi-journal-plus fs-1 text-primary"></i>
-
-                            <h4 class="fw-bold mt-3">
-                                No recipes yet
-                            </h4>
-
-                            <p class="text-muted">
-                                Share your first recipe with the community.
-                            </p>
-
-                            <a href="create-recipe.html"
-                               class="btn btn-primary">
-                               Add Your First Recipe
-                            </a>
-
-                        </div>
-
-                    </div>
-                `;
-
-            } else {
-
-                const recentRecipes =
-                    recipes.slice(0, 3);
-
-
-                recentRecipes.forEach(
-                    function (recipe) {
-
-                        dashboardContainer.innerHTML +=
-                            recipeCard(recipe, true);
-
-                    }
-                );
-            }
-
-
-            const deleteButtons =
-                dashboardContainer
-                .querySelectorAll(".delete-btn");
-
-
-            deleteButtons.forEach(
-                function (button) {
-
-                    button.onclick =
-                        function () {
-
-                            deleteRecipe(
-                                button.dataset.id
-                            );
-
-                        };
-
-                }
-            );
-        }
-
-
-        // =========================
-        // MY RECIPES
-        // =========================
-
-        const myContainer =
-            document.getElementById(
-                "myRecipesContainer"
-            );
-
-
-        if (myContainer) {
-
-            const recipes =
-                await getMyRecipes();
-
-
-            myContainer.innerHTML = "";
-
-
-            if (recipes.length === 0) {
-
-                myContainer.innerHTML = `
-
-                    <div class="col-12">
-
-                        <div class="panel empty-state">
-
-                            <i class="bi bi-journal-plus fs-1 text-primary"></i>
-
-                            <h4 class="fw-bold mt-3">
-                                Your collection is empty
-                            </h4>
-
-                            <a href="create-recipe.html"
-                               class="btn btn-primary">
-                               Create Recipe
-                            </a>
-
-                        </div>
-
-                    </div>
-                `;
-
-            } else {
-
-                recipes.forEach(
-                    function (recipe) {
-
-                        myContainer.innerHTML +=
-                            recipeCard(recipe, true);
-
-                    }
-                );
-            }
-
-
-            const deleteButtons =
-                myContainer.querySelectorAll(
-                    ".delete-btn"
-                );
-
-
-            deleteButtons.forEach(
-                function (button) {
-
-                    button.onclick =
-                        function () {
-
-                            deleteRecipe(
-                                button.dataset.id
-                            );
-
-                        };
-
-                }
-            );
-        }
-
-
-        // =========================
-        // ALL RECIPES
-        // =========================
-
-        const allContainer =
-            document.getElementById(
-                "allRecipesContainer"
-            );
-
-
-        if (allContainer) {
-
-            let allRecipes = [];
-
-
-            const result =
-                await supabaseClient
+        const { data, error } =
+            await client
                 .from("recipes")
                 .select("*")
                 .order("created_at", {
@@ -986,856 +554,914 @@ document.addEventListener(
                 });
 
 
-            if (result.error) {
+        console.log("All Recipes:", data);
 
-                showMessage(
-                    result.error.message,
-                    "danger"
-                );
+        console.log("All Recipes Error:", error);
 
-            } else {
 
-                allRecipes =
-                    result.data || [];
+        if (error) {
+
+            allRecipesContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        ${error.message}
+                    </div>
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        allRecipes = data || [];
+
+
+        function displayRecipes(recipes) {
+
+            allRecipesContainer.innerHTML = "";
+
+
+            if (recipes.length === 0) {
+
+                allRecipesContainer.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <h4>No recipes found</h4>
+                            <p class="text-muted">
+                                Try another search or category.
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                return;
+
             }
 
 
-            function displayRecipes() {
+            recipes.forEach((recipe) => {
 
-                const searchInput =
-                    document.getElementById(
-                        "searchInput"
-                    );
+                allRecipesContainer.innerHTML += `
 
+                    <div class="col-md-6 col-lg-4">
 
-                const categoryFilter =
-                    document.getElementById(
-                        "categoryFilter"
-                    );
+                        <div class="card h-100 shadow-sm">
 
+                            ${
+                                recipe.image_url
+                                ?
+                                `
+                                <img
+                                    src="${recipe.image_url}"
+                                    class="card-img-top"
+                                    style="height:220px; object-fit:cover;"
+                                >
+                                `
+                                :
+                                ""
+                            }
 
-                const search =
-                    searchInput.value
-                    .toLowerCase()
-                    .trim();
+                            <div class="card-body">
 
+                                <span class="badge bg-primary mb-2">
+                                    ${recipe.category || "Recipe"}
+                                </span>
 
-                const category =
-                    categoryFilter.value;
+                                <h5 class="card-title">
+                                    ${recipe.title}
+                                </h5>
 
-
-                let filteredRecipes =
-                    allRecipes.filter(
-                        function (recipe) {
-
-                            let titleMatch =
-                                recipe.title
-                                .toLowerCase()
-                                .includes(search);
-
-
-                            let categoryMatch =
-                                category === "" ||
-                                recipe.category === category;
-
-
-                            return (
-                                titleMatch &&
-                                categoryMatch
-                            );
-
-                        }
-                    );
-
-
-                allContainer.innerHTML = "";
-
-
-                if (filteredRecipes.length === 0) {
-
-                    allContainer.innerHTML = `
-
-                        <div class="col-12">
-
-                            <div class="panel empty-state">
-
-                                <i class="bi bi-search fs-1 text-muted"></i>
-
-                                <h4 class="fw-bold mt-3">
-                                    No recipes found
-                                </h4>
-
-                                <p class="text-muted">
-                                    Try another title or category.
+                                <p class="card-text text-muted">
+                                    ${
+                                        recipe.description
+                                        || "No description available."
+                                    }
                                 </p>
+
+                                <a
+                                    href="recipe-details.html?id=${recipe.id}"
+                                    class="btn btn-primary"
+                                >
+                                    View Recipe
+                                </a>
 
                             </div>
 
                         </div>
-                    `;
 
-                    return;
-                }
+                    </div>
 
+                `;
 
-                filteredRecipes.forEach(
-                    function (recipe) {
+            });
 
-                        allContainer.innerHTML +=
-                            recipeCard(
-                                recipe,
-                                false
-                            );
-
-                    }
-                );
-            }
-
-
-            displayRecipes();
-
-
-            document
-                .getElementById("searchInput")
-                .addEventListener(
-                    "input",
-                    displayRecipes
-                );
-
-
-            document
-                .getElementById("categoryFilter")
-                .addEventListener(
-                    "change",
-                    displayRecipes
-                );
-
-
-            document
-                .getElementById("clearFilters")
-                .addEventListener(
-                    "click",
-                    function () {
-
-                        document.getElementById(
-                            "searchInput"
-                        ).value = "";
-
-
-                        document.getElementById(
-                            "categoryFilter"
-                        ).value = "";
-
-
-                        displayRecipes();
-
-                    }
-                );
         }
 
 
-        // =========================
-        // CREATE RECIPE
-        // =========================
+        displayRecipes(allRecipes);
 
-        const recipeForm =
-            document.getElementById(
-                "recipeForm"
+
+        const searchInput =
+            document.querySelector("#searchInput");
+
+        const categoryFilter =
+            document.querySelector("#categoryFilter");
+
+        const clearFilters =
+            document.querySelector("#clearFilters");
+
+
+        function filterRecipes() {
+
+            const searchValue =
+                searchInput
+                ?
+                searchInput.value
+                    .toLowerCase()
+                    .trim()
+                :
+                "";
+
+
+            const categoryValue =
+                categoryFilter
+                ?
+                categoryFilter.value
+                :
+                "";
+
+
+            const filtered =
+                allRecipes.filter((recipe) => {
+
+                    const title =
+                        recipe.title
+                        ?
+                        recipe.title.toLowerCase()
+                        :
+                        "";
+
+
+                    const titleMatch =
+                        title.includes(searchValue);
+
+
+                    const categoryMatch =
+                        categoryValue === ""
+                        ||
+                        recipe.category === categoryValue;
+
+
+                    return titleMatch && categoryMatch;
+
+                });
+
+
+            displayRecipes(filtered);
+
+        }
+
+
+        if (searchInput) {
+
+            searchInput.addEventListener(
+                "input",
+                filterRecipes
+            );
+
+        }
+
+
+        if (categoryFilter) {
+
+            categoryFilter.addEventListener(
+                "change",
+                filterRecipes
+            );
+
+        }
+
+
+        if (clearFilters) {
+
+            clearFilters.addEventListener(
+                "click",
+                () => {
+
+                    if (searchInput) {
+                        searchInput.value = "";
+                    }
+
+                    if (categoryFilter) {
+                        categoryFilter.value = "";
+                    }
+
+                    displayRecipes(allRecipes);
+
+                }
+            );
+
+        }
+
+    }
+
+
+  
+
+    const recipeDetails =
+        document.querySelector("#recipeDetails");
+
+
+    if (recipeDetails) {
+
+        console.log("Recipe Details page");
+
+
+        const urlParams =
+            new URLSearchParams(
+                window.location.search
             );
 
 
-        if (recipeForm) {
-
-            recipeForm.addEventListener(
-                "submit",
-                async function (e) {
-
-                    e.preventDefault();
+        const recipeId =
+            urlParams.get("id");
 
 
-                    const user =
-                        await checkUser();
+        if (!recipeId) {
+
+            recipeDetails.innerHTML = `
+                <div class="alert alert-danger">
+                    Recipe ID not found.
+                </div>
+            `;
+
+            return;
+
+        }
 
 
-                    if (!user) {
+        const { data: recipe, error } =
+            await client
+                .from("recipes")
+                .select("*")
+                .eq("id", recipeId)
+                .single();
 
-                        return;
+
+        console.log("Recipe:", recipe);
+
+        console.log("Recipe Error:", error);
+
+
+        if (error) {
+
+            recipeDetails.innerHTML = `
+                <div class="alert alert-danger">
+                    ${error.message}
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        recipeDetails.innerHTML = `
+
+            <div class="row g-4 align-items-start">
+
+                <div class="col-lg-6">
+
+                    ${
+                        recipe.image_url
+                        ?
+                        `
+                        <img
+                            src="${recipe.image_url}"
+                            class="img-fluid rounded-4 shadow-sm w-100"
+                            style="max-height:500px; object-fit:cover;"
+                        >
+                        `
+                        :
+                        `
+                        <div class="bg-light rounded-4 p-5 text-center">
+                            No Image
+                        </div>
+                        `
                     }
 
-
-                    const title =
-                        document.getElementById(
-                            "title"
-                        ).value.trim();
+                </div>
 
 
-                    const description =
-                        document.getElementById(
-                            "description"
-                        ).value.trim();
+                <div class="col-lg-6">
+
+                    <span class="badge bg-primary mb-3">
+                        ${recipe.category || "Recipe"}
+                    </span>
 
 
-                    const category =
-                        document.getElementById(
-                            "category"
-                        ).value;
+                    <h1 class="fw-bold">
+                        ${recipe.title}
+                    </h1>
 
 
-                    const ingredients =
-                        document.getElementById(
-                            "ingredients"
-                        ).value.trim();
+                    <p class="text-muted">
+                        ${
+                            recipe.description
+                            || "No description available."
+                        }
+                    </p>
 
 
-                    const instructions =
-                        document.getElementById(
-                            "instructions"
-                        ).value.trim();
+                    <p>
+                        <strong>Cooking Time:</strong>
+                        ${
+                            recipe.cooking_time
+                            || "Not specified"
+                        }
+                    </p>
 
 
-                    const cookingTime =
-                        document.getElementById(
-                            "cooking_time"
-                        ).value.trim();
+                    <hr>
 
 
-                    const image =
-                        document.getElementById(
-                            "image"
-                        ).files[0];
+                    <h4 class="fw-bold">
+                        Ingredients
+                    </h4>
 
 
-                    if (
-                        title === "" ||
-                        description === "" ||
-                        category === "" ||
-                        ingredients === "" ||
-                        instructions === ""
-                    ) {
+                    <p style="white-space: pre-line;">
+                        ${
+                            recipe.ingredients
+                            || "No ingredients available."
+                        }
+                    </p>
 
-                        showMessage(
-                            "Please fill all required fields.",
-                            "warning"
+
+                    <h4 class="fw-bold mt-4">
+                        Instructions
+                    </h4>
+
+
+                    <p style="white-space: pre-line;">
+                        ${
+                            recipe.instructions
+                            || "No instructions available."
+                        }
+                    </p>
+
+
+                    <a
+                        href="recipes.html"
+                        class="btn btn-primary mt-3"
+                    >
+                        Back to Recipes
+                    </a>
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+    const editRecipeForm =
+        document.querySelector("#editRecipeForm");
+
+
+    if (editRecipeForm) {
+
+        console.log("Edit Recipe page");
+
+
+        if (!user) {
+
+            window.location.href = "login.html";
+
+            return;
+
+        }
+
+
+        const urlParams =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        const recipeId =
+            urlParams.get("id");
+
+
+        if (!recipeId) {
+
+            alert("Recipe ID not found");
+
+            return;
+
+        }
+
+
+        const title =
+            document.querySelector("#title");
+
+        const category =
+            document.querySelector("#category");
+
+        const description =
+            document.querySelector("#description");
+
+        const cookingTime =
+            document.querySelector("#cooking_time");
+
+        const ingredients =
+            document.querySelector("#ingredients");
+
+        const instructions =
+            document.querySelector("#instructions");
+
+        const image =
+            document.querySelector("#image");
+
+
+        const { data: recipe, error } =
+            await client
+                .from("recipes")
+                .select("*")
+                .eq("id", recipeId)
+                .eq("user_id", user.id)
+                .single();
+
+
+        console.log("Edit Recipe Data:", recipe);
+
+        console.log("Edit Recipe Error:", error);
+
+
+        if (error) {
+
+            alert(
+                "You cannot edit this recipe."
+            );
+
+            window.location.href =
+                "my-recipes.html";
+
+            return;
+
+        }
+
+
+        title.value =
+            recipe.title || "";
+
+        category.value =
+            recipe.category || "";
+
+        description.value =
+            recipe.description || "";
+
+        cookingTime.value =
+            recipe.cooking_time || "";
+
+        ingredients.value =
+            recipe.ingredients || "";
+
+        instructions.value =
+            recipe.instructions || "";
+
+
+        editRecipeForm.addEventListener(
+            "submit",
+            async (event) => {
+
+                event.preventDefault();
+
+
+                console.log(
+                    "Updating recipe..."
+                );
+
+
+                let imageUrl =
+                    recipe.image_url;
+
+
+                if (
+                    image &&
+                    image.files &&
+                    image.files.length > 0
+                ) {
+
+                    const uploadedFile =
+                        image.files[0];
+
+
+                    const fileName =
+                        Date.now()
+                        + "-"
+                        + uploadedFile.name;
+
+
+                    const { data: uploadData,
+                            error: uploadError } =
+                        await client
+                            .storage
+                            .from("recipe-images")
+                            .upload(
+                                fileName,
+                                uploadedFile,
+                                {
+                                    cacheControl: "3600",
+                                    contentType:
+                                        uploadedFile.type,
+                                    upsert: true
+                                }
+                            );
+
+
+                    console.log(
+                        "Upload Data:",
+                        uploadData
+                    );
+
+
+                    console.log(
+                        "Upload Error:",
+                        uploadError
+                    );
+
+
+                    if (uploadError) {
+
+                        alert(
+                            uploadError.message
                         );
 
                         return;
+
+                    }
+
+
+                    const { data: urlData } =
+                        client
+                            .storage
+                            .from("recipe-images")
+                            .getPublicUrl(
+                                fileName
+                            );
+
+
+                    imageUrl =
+                        urlData.publicUrl;
+
+                }
+
+
+                const { error: updateError } =
+                    await client
+                        .from("recipes")
+                        .update({
+
+                            title:
+                                title.value,
+
+                            category:
+                                category.value,
+
+                            description:
+                                description.value,
+
+                            cooking_time:
+                                cookingTime.value,
+
+                            ingredients:
+                                ingredients.value,
+
+                            instructions:
+                                instructions.value,
+
+                            image_url:
+                                imageUrl
+
+                        })
+                        .eq("id", recipeId)
+                        .eq("user_id", user.id);
+
+
+                console.log(
+                    "Update Error:",
+                    updateError
+                );
+
+
+                if (updateError) {
+
+                    alert(
+                        updateError.message
+                    );
+
+                    return;
+
+                }
+
+
+                alert(
+                    "Recipe updated successfully!"
+                );
+
+
+                window.location.href =
+                    "my-recipes.html";
+
+            }
+        );
+
+    }
+
+
+    const recipeForm =
+        document.querySelector("#recipeForm");
+
+
+    if (recipeForm) {
+
+        console.log("Create Recipe page");
+
+
+        if (!user) {
+
+            window.location.href = "login.html";
+
+            return;
+
+        }
+
+
+        recipeForm.addEventListener(
+            "submit",
+            async (event) => {
+
+                try {
+
+                    event.preventDefault();
+
+
+                    const title =
+                        document.querySelector("#title");
+
+                    const category =
+                        document.querySelector("#category");
+
+                    const description =
+                        document.querySelector("#description");
+
+                    const cookingTime =
+                        document.querySelector(
+                            "#cooking_time"
+                        );
+
+                    const ingredients =
+                        document.querySelector(
+                            "#ingredients"
+                        );
+
+                    const instructions =
+                        document.querySelector(
+                            "#instructions"
+                        );
+
+                    const image =
+                        document.querySelector("#image");
+
+
+                    if (title.value.trim() === "") {
+
+                        alert("Please enter recipe title");
+
+                        return;
+
+                    }
+
+
+                    if (ingredients.value.trim() === "") {
+
+                        alert("Please enter ingredients");
+
+                        return;
+
+                    }
+
+
+                    if (instructions.value.trim() === "") {
+
+                        alert("Please enter instructions");
+
+                        return;
+
                     }
 
 
                     let imageUrl = "";
 
 
-                    // Upload Image
+                    if (
+                        image &&
+                        image.files &&
+                        image.files.length > 0
+                    ) {
 
-                    if (image) {
+                        const uploadedFile =
+                            image.files[0];
+
 
                         const fileName =
-                            user.id +
-                            "/" +
-                            Date.now() +
-                            "-" +
-                            image.name.replaceAll(
-                                " ",
-                                "-"
-                            );
+                            Date.now()
+                            + "-"
+                            + uploadedFile.name;
 
 
-                        const upload =
-                            await supabaseClient
-                            .storage
-                            .from("recipe-images")
-                            .upload(
-                                fileName,
-                                image
-                            );
+                        const { data: uploadData,
+                                error: uploadError } =
+                            await client
+                                .storage
+                                .from("recipe-images")
+                                .upload(
+                                    fileName,
+                                    uploadedFile,
+                                    {
+                                        cacheControl: "3600",
+                                        contentType:
+                                            uploadedFile.type,
+                                        upsert: true
+                                    }
+                                );
 
 
-                        if (upload.error) {
+                        console.log(
+                            "Upload Data:",
+                            uploadData
+                        );
 
-                            showMessage(
-                                upload.error.message,
-                                "danger"
+
+                        console.log(
+                            "Upload Error:",
+                            uploadError
+                        );
+
+
+                        if (uploadError) {
+
+                            alert(
+                                uploadError.message
                             );
 
                             return;
+
                         }
 
 
-                        const imageResult =
-                            supabaseClient
-                            .storage
-                            .from("recipe-images")
-                            .getPublicUrl(
-                                fileName
-                            );
+                        const { data: urlData } =
+                            client
+                                .storage
+                                .from("recipe-images")
+                                .getPublicUrl(
+                                    fileName
+                                );
 
 
                         imageUrl =
-                            imageResult.data.publicUrl;
+                            urlData.publicUrl;
+
                     }
 
 
-                    // Recipe Data
+                    const { data, error } =
+                        await client
+                            .from("recipes")
+                            .insert({
 
-                    const recipeData = {
+                                user_id:
+                                    user.id,
 
-                        user_id: user.id,
+                                title:
+                                    title.value,
 
-                        title: title,
+                                category:
+                                    category.value,
 
-                        description: description,
+                                description:
+                                    description.value,
 
-                        category: category,
+                                cooking_time:
+                                    cookingTime.value,
 
-                        ingredients: ingredients,
+                                ingredients:
+                                    ingredients.value,
 
-                        instructions: instructions,
+                                instructions:
+                                    instructions.value,
 
-                        cooking_time: cookingTime,
+                                image_url:
+                                    imageUrl
 
-                        image_url: imageUrl,
-
-                        created_at:
-                            new Date().toISOString()
-                    };
-
-
-                    const result =
-                        await supabaseClient
-                        .from("recipes")
-                        .insert([
-                            recipeData
-                        ]);
+                            })
+                            .select();
 
 
-                    if (result.error) {
+                    console.log(
+                        "Recipe Data:",
+                        data
+                    );
 
-                        showMessage(
-                            result.error.message,
-                            "danger"
-                        );
+
+                    console.log(
+                        "Recipe Error:",
+                        error
+                    );
+
+
+                    if (error) {
+
+                        alert(error.message);
 
                         return;
+
                     }
 
 
-                    showMessage(
-                        "Recipe published successfully!",
-                        "success"
+                    alert(
+                        "Recipe created successfully!"
                     );
 
 
-                    setTimeout(
-                        function () {
-
-                            window.location.href =
-                                "dashboard.html";
-
-                        },
-                        700
-                    );
+                    window.location.href =
+                        "my-recipes.html";
 
                 }
-            );
-        }
 
+                catch (error) {
 
-        // =========================
-        // EDIT RECIPE
-        // =========================
+                    console.log(error);
 
-        const editForm =
-            document.getElementById(
-                "editRecipeForm"
-            );
-
-
-        if (editForm) {
-
-            const user =
-                await checkUser();
-
-
-            if (!user) {
-
-                return;
-            }
-
-
-            const url =
-                new URLSearchParams(
-                    window.location.search
-                );
-
-
-            const id =
-                url.get("id");
-
-
-            if (!id) {
-
-                showMessage(
-                    "Recipe ID is missing.",
-                    "danger"
-                );
-
-                return;
-            }
-
-
-            const result =
-                await supabaseClient
-                .from("recipes")
-                .select("*")
-                .eq("id", id)
-                .eq("user_id", user.id)
-                .single();
-
-
-            if (
-                result.error ||
-                !result.data
-            ) {
-
-                showMessage(
-                    "Recipe not found or you do not own it.",
-                    "danger"
-                );
-
-
-                setTimeout(
-                    function () {
-
-                        window.location.href =
-                            "my-recipes.html";
-
-                    },
-                    900
-                );
-
-
-                return;
-            }
-
-
-            const recipe =
-                result.data;
-
-
-            document.getElementById(
-                "title"
-            ).value =
-                recipe.title || "";
-
-
-            document.getElementById(
-                "description"
-            ).value =
-                recipe.description || "";
-
-
-            document.getElementById(
-                "category"
-            ).value =
-                recipe.category || "";
-
-
-            document.getElementById(
-                "ingredients"
-            ).value =
-                recipe.ingredients || "";
-
-
-            document.getElementById(
-                "instructions"
-            ).value =
-                recipe.instructions || "";
-
-
-            document.getElementById(
-                "cooking_time"
-            ).value =
-                recipe.cooking_time || "";
-
-
-            // UPDATE
-
-            editForm.addEventListener(
-                "submit",
-                async function (e) {
-
-                    e.preventDefault();
-
-
-                    const updates = {
-
-                        title:
-                            document.getElementById(
-                                "title"
-                            ).value.trim(),
-
-
-                        description:
-                            document.getElementById(
-                                "description"
-                            ).value.trim(),
-
-
-                        category:
-                            document.getElementById(
-                                "category"
-                            ).value,
-
-
-                        ingredients:
-                            document.getElementById(
-                                "ingredients"
-                            ).value.trim(),
-
-
-                        instructions:
-                            document.getElementById(
-                                "instructions"
-                            ).value.trim(),
-
-
-                        cooking_time:
-                            document.getElementById(
-                                "cooking_time"
-                            ).value.trim(),
-
-
-                        updated_at:
-                            new Date().toISOString()
-
-                    };
-
-
-                    const image =
-                        document.getElementById(
-                            "image"
-                        ).files[0];
-
-
-                    if (image) {
-
-                        const fileName =
-                            user.id +
-                            "/" +
-                            Date.now() +
-                            "-" +
-                            image.name.replaceAll(
-                                " ",
-                                "-"
-                            );
-
-
-                        const upload =
-                            await supabaseClient
-                            .storage
-                            .from("recipe-images")
-                            .upload(
-                                fileName,
-                                image
-                            );
-
-
-                        if (upload.error) {
-
-                            showMessage(
-                                upload.error.message,
-                                "danger"
-                            );
-
-                            return;
-                        }
-
-
-                        const imageResult =
-                            supabaseClient
-                            .storage
-                            .from("recipe-images")
-                            .getPublicUrl(
-                                fileName
-                            );
-
-
-                        updates.image_url =
-                            imageResult.data.publicUrl;
-                    }
-
-
-                    const updateResult =
-                        await supabaseClient
-                        .from("recipes")
-                        .update(updates)
-                        .eq("id", id)
-                        .eq("user_id", user.id);
-
-
-                    if (updateResult.error) {
-
-                        showMessage(
-                            updateResult.error.message,
-                            "danger"
-                        );
-
-                        return;
-                    }
-
-
-                    showMessage(
-                        "Recipe updated successfully!",
-                        "success"
-                    );
-
-
-                    setTimeout(
-                        function () {
-
-                            window.location.href =
-                                "my-recipes.html";
-
-                        },
-                        700
-                    );
+                    alert(error.message);
 
                 }
-            );
-        }
 
-
-        // =========================
-        // RECIPE DETAILS
-        // =========================
-
-        const details =
-            document.getElementById(
-                "recipeDetails"
-            );
-
-
-        if (details) {
-
-            const url =
-                new URLSearchParams(
-                    window.location.search
-                );
-
-
-            const id =
-                url.get("id");
-
-
-            if (!id) {
-
-                return;
             }
-
-
-            const result =
-                await supabaseClient
-                .from("recipes")
-                .select("*")
-                .eq("id", id)
-                .single();
-
-
-            if (
-                result.error ||
-                !result.data
-            ) {
-
-                details.innerHTML = `
-
-                    <div class="empty-state">
-
-                        <h3>
-                            Recipe not found
-                        </h3>
-
-                    </div>
-                `;
-
-                return;
-            }
-
-
-            const recipe =
-                result.data;
-
-
-            // Recipe Image
-
-            let image = "";
-
-
-            if (recipe.image_url) {
-
-                image =
-                    '<img src="' +
-                    esc(recipe.image_url) +
-                    '" class="detail-img" alt="' +
-                    esc(recipe.title) +
-                    '">';
-
-            } else {
-
-                image =
-                    '<div class="recipe-placeholder detail-img">' +
-                    '<i class="bi bi-egg-fried"></i>' +
-                    '</div>';
-            }
-
-
-            // Ingredients
-
-            let ingredients = "";
-
-
-            if (recipe.ingredients) {
-
-                const ingredientList =
-                    recipe.ingredients.split("\n");
-
-
-                ingredientList.forEach(
-                    function (item) {
-
-                        if (item.trim() !== "") {
-
-                            ingredients +=
-                                "<li>" +
-                                esc(item) +
-                                "</li>";
-                        }
-
-                    }
-                );
-            }
-
-
-            // Display Recipe
-
-            details.innerHTML = `
-
-                <div class="row g-5 align-items-start">
-
-                    <div class="col-lg-6">
-
-                        ${image}
-
-                    </div>
-
-
-                    <div class="col-lg-6">
-
-                        <span class="category-pill">
-
-                            ${esc(
-                                recipe.category ||
-                                "Recipe"
-                            )}
-
-                        </span>
-
-
-                        <h1 class="page-title mt-3">
-
-                            ${esc(recipe.title)}
-
-                        </h1>
-
-
-                        <p class="lead text-muted">
-
-                            ${esc(
-                                recipe.description || ""
-                            )}
-
-                        </p>
-
-
-                        <div class="d-flex gap-3 flex-wrap mb-4">
-
-                            <span class="text-muted">
-
-                                <i class="bi bi-clock me-1"></i>
-
-                                ${esc(
-                                    recipe.cooking_time ||
-                                    "Not specified"
-                                )}
-
-                            </span>
-
-
-                            <span class="text-muted">
-
-                                <i class="bi bi-calendar3 me-1"></i>
-
-                                ${
-                                    recipe.created_at
-                                    ? new Date(
-                                        recipe.created_at
-                                      ).toLocaleDateString()
-                                    : ""
-                                }
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="panel p-4">
-
-                            <h5 class="fw-bold">
-                                Ingredients
-                            </h5>
-
-
-                            <ul class="ingredient-list mt-3">
-
-                                ${ingredients}
-
-                            </ul>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="row mt-5">
-
-                    <div class="col-lg-9">
-
-                        <div class="panel p-4 p-md-5">
-
-                            <h4 class="fw-bold mb-3">
-
-                                Instructions
-
-                            </h4>
-
-
-                            <div class="instructions">
-
-                                ${esc(
-                                    recipe.instructions ||
-                                    ""
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-            `;
-        }
+        );
 
     }
-);
+
+
+
+  
+
+    const passwordToggle =
+        document.querySelector(".pw-toggle");
+
+
+    if (passwordToggle) {
+
+        passwordToggle.addEventListener(
+            "click",
+            () => {
+
+                const password =
+                    document.querySelector("#password");
+
+
+                if (!password) {
+                    return;
+                }
+
+
+                if (
+                    password.type === "password"
+                ) {
+
+                    password.type = "text";
+
+                    passwordToggle.innerHTML =
+                        '<i class="bi bi-eye-slash"></i>';
+
+                }
+
+                else {
+
+                    password.type = "password";
+
+                    passwordToggle.innerHTML =
+                        '<i class="bi bi-eye"></i>';
+
+                }
+
+            }
+        );
+
+    }
+
+
+});
